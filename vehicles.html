@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>车辆管理 - 油费管理系统</title>
+<style>
+* { margin:0; padding:0; }
+body { font-family: Arial, "Microsoft YaHei", sans-serif; background: #f0f2f5; font-size: 16px; margin: 0; padding: 0 12px 60px 12px; }
+h1 { text-align: center; font-size: 22px; color: #d84315; margin: 10px 0; }
+
+.nav { display: flex; gap: 6px; margin-bottom: 12px; background: #fff; padding: 5px; border-radius: 10px; }
+.nav a { flex: 1; padding: 10px 2px; font-size: 14px; font-weight: bold; border-radius: 8px; background: #eee; color: #666; text-align: center; text-decoration: none; display: block; }
+.nav a.active { background: #ff9800; color: #fff; }
+
+.card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.card-title { font-size: 15px; font-weight: bold; color: #444; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #f5f5f5; }
+
+label { display: block; font-size: 14px; font-weight: bold; color: #555; margin: 10px 0 4px 0; }
+input { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; }
+
+.btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; color: #fff; background: #ff9800; display: block; text-align: center; }
+.btn-green { background: #4caf50; }
+.btn-red { background: #ef5350; }
+.btn-sm { width: auto; padding: 6px 12px; font-size: 13px; margin-top: 0; display: inline-block; }
+
+.vehicle-row { display: flex; justify-content: space-between; align-items: center; background: #f5f5f5; padding: 10px; border-radius: 8px; margin: 6px 0; }
+.vehicle-name { font-weight: bold; font-size: 16px; }
+
+.empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>油费管理系统</h1>
+
+<div class="nav">
+    <a href="index.html">记油费</a>
+    <a href="vehicles.html" class="active">车辆管理</a>
+    <a href="reports.html">报表导出</a>
+</div>
+
+<div class="card">
+    <div class="card-title">添加新车牌</div>
+    <input type="text" id="newPlate" placeholder="输入新车牌，如：云E12345" style="margin-bottom:8px;">
+    <button class="btn btn-green" onclick="addNewPlate()">添加</button>
+</div>
+
+<div class="card">
+    <div class="card-title">已有车牌</div>
+    <div id="plateList"></div>
+</div>
+
+<script>
+var vehicles = [];
+
+function loadData() {
+    try {
+        var v = localStorage.getItem('fuel_vehicles');
+        if (v) vehicles = JSON.parse(v);
+    } catch(e) {}
+
+    if (vehicles.length === 0) {
+        vehicles = [
+            {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
+            {id:4, plate:"云E37261"}, {id:5, plate:"桂AAG276"}, {id:6, plate:"桂AAE552"},
+            {id:7, plate:"云F92105"}, {id:8, plate:"云E53286"}, {id:9, plate:"云E38259"},
+            {id:10, plate:"卡特挖机"}, {id:11, plate:"云E96105"}, {id:12, plate:"云E37951"},
+            {id:13, plate:"桂AAC807"}, {id:14, plate:"云E35052"}, {id:15, plate:"云E52737"},
+            {id:16, plate:"云E55476"}
+        ];
+        saveVehicles();
+    }
+}
+
+function saveVehicles() {
+    try { localStorage.setItem('fuel_vehicles', JSON.stringify(vehicles)); } catch(e) {}
+}
+
+function showPlateList() {
+    var box = document.getElementById('plateList');
+    if (vehicles.length === 0) {
+        box.innerHTML = '<div class="empty">没有车辆</div>';
+        return;
+    }
+    var html = '';
+    for (var i = 0; i < vehicles.length; i++) {
+        html += '<div class="vehicle-row">' +
+            '<span class="vehicle-name">' + vehicles[i].plate + '</span>' +
+            '<button class="btn btn-red btn-sm" onclick="delPlate(' + vehicles[i].id + ')">删除</button>' +
+            '</div>';
+    }
+    box.innerHTML = html;
+}
+
+function addNewPlate() {
+    var input = document.getElementById('newPlate');
+    var plate = input.value.trim().toUpperCase();
+    if (!plate) { alert('请输入车牌'); return; }
+
+    var exists = false;
+    for (var i = 0; i < vehicles.length; i++) {
+        if (vehicles[i].plate === plate) { exists = true; break; }
+    }
+    if (exists) { alert('车牌已存在'); return; }
+
+    var maxId = 0;
+    for (var i = 0; i < vehicles.length; i++) {
+        if (vehicles[i].id > maxId) maxId = vehicles[i].id;
+    }
+    vehicles.push({id: maxId + 1, plate: plate});
+    saveVehicles();
+    input.value = '';
+    alert('添加成功');
+    showPlateList();
+}
+
+function delPlate(id) {
+    var plate = '';
+    for (var i = 0; i < vehicles.length; i++) {
+        if (vehicles[i].id === id) { plate = vehicles[i].plate; break; }
+    }
+    if (!confirm('确定删除 ' + plate + ' 吗？')) return;
+
+    var newV = [];
+    for (var i = 0; i < vehicles.length; i++) {
+        if (vehicles[i].id !== id) newV.push(vehicles[i]);
+    }
+    vehicles = newV;
+    saveVehicles();
+    alert('已删除');
+    showPlateList();
+}
+
+function init() {
+    loadData();
+    showPlateList();
+}
+
+init();
+</script>
+</body>
+</html>
