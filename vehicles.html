@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>车辆管理 - 油费管理系统</title>
 <style>
-* { margin:0; padding:0; }
+* { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: Arial, "Microsoft YaHei", sans-serif; background: #f0f2f5; font-size: 16px; margin: 0; padding: 0 12px 60px 12px; }
 h1 { text-align: center; font-size: 22px; color: #d84315; margin: 10px 0; }
 
@@ -28,6 +28,7 @@ input { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bor
 .vehicle-name { font-weight: bold; font-size: 16px; }
 
 .empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
+.tip-box { background: #e3f2fd; border-left: 3px solid #2196f3; padding: 10px; border-radius: 8px; margin: 8px 0; font-size: 13px; color: #1565c0; }
 </style>
 </head>
 <body>
@@ -50,24 +51,39 @@ input { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bor
     <div id="plateList"></div>
 </div>
 
+<div class="card" style="margin-top:20px;">
+    <div class="card-title">系统维护</div>
+    <div class="tip-box">如果车辆列表显示异常或为空，请点击下方按钮恢复默认车辆。</div>
+    <button class="btn btn-red" onclick="resetVehicles()">恢复默认车辆</button>
+</div>
+
 <script>
 var vehicles = [];
+
+var DEFAULT_VEHICLES = [
+    {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
+    {id:4, plate:"云E37261"}, {id:5, plate:"桂AAG276"}, {id:6, plate:"桂AAE552"},
+    {id:7, plate:"云F92105"}, {id:8, plate:"云E53286"}, {id:9, plate:"云E38259"},
+    {id:10, plate:"卡特挖机"}, {id:11, plate:"云E96105"}, {id:12, plate:"云E37951"},
+    {id:13, plate:"桂AAC807"}, {id:14, plate:"云E35052"}, {id:15, plate:"云E52737"},
+    {id:16, plate:"云E55476"}
+];
 
 function loadData() {
     try {
         var v = localStorage.getItem('fuel_vehicles');
-        if (v) vehicles = JSON.parse(v);
-    } catch(e) {}
+        if (v) {
+            var parsed = JSON.parse(v);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                vehicles = parsed;
+            }
+        }
+    } catch(e) {
+        console.log('车辆数据读取失败');
+    }
 
-    if (vehicles.length === 0) {
-        vehicles = [
-            {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
-            {id:4, plate:"云E37261"}, {id:5, plate:"桂AAG276"}, {id:6, plate:"桂AAE552"},
-            {id:7, plate:"云F92105"}, {id:8, plate:"云E53286"}, {id:9, plate:"云E38259"},
-            {id:10, plate:"卡特挖机"}, {id:11, plate:"云E96105"}, {id:12, plate:"云E37951"},
-            {id:13, plate:"桂AAC807"}, {id:14, plate:"云E35052"}, {id:15, plate:"云E52737"},
-            {id:16, plate:"云E55476"}
-        ];
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+        vehicles = JSON.parse(JSON.stringify(DEFAULT_VEHICLES));
         saveVehicles();
     }
 }
@@ -78,8 +94,8 @@ function saveVehicles() {
 
 function showPlateList() {
     var box = document.getElementById('plateList');
-    if (vehicles.length === 0) {
-        box.innerHTML = '<div class="empty">没有车辆</div>';
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+        box.innerHTML = '<div class="empty">没有车辆，请添加或恢复默认</div>';
         return;
     }
     var html = '';
@@ -129,6 +145,14 @@ function delPlate(id) {
     saveVehicles();
     alert('已删除');
     showPlateList();
+}
+
+function resetVehicles() {
+    if (!confirm('确定恢复默认的16辆车吗？这会覆盖当前车辆列表，但不会删除加油记录。')) return;
+    vehicles = JSON.parse(JSON.stringify(DEFAULT_VEHICLES));
+    saveVehicles();
+    showPlateList();
+    alert('已恢复默认车辆');
 }
 
 function init() {
