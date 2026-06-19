@@ -28,7 +28,6 @@ input { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bor
 .vehicle-name { font-weight: bold; font-size: 16px; }
 
 .empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
-.tip-box { background: #e3f2fd; border-left: 3px solid #2196f3; padding: 10px; border-radius: 8px; margin: 8px 0; font-size: 13px; color: #1565c0; }
 
 .version { text-align: center; font-size: 11px; color: #999; margin-top: 20px; padding-bottom: 10px; }
 </style>
@@ -53,13 +52,7 @@ input { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bor
     <div id="plateList"></div>
 </div>
 
-<div class="card" style="margin-top:20px;">
-    <div class="card-title">系统维护</div>
-    <div class="tip-box">如果车辆列表显示异常或为空，请点击下方按钮恢复默认车辆。</div>
-    <button class="btn btn-red" onclick="resetVehicles()">恢复默认车辆</button>
-</div>
-
-<div class="version">版本：v2.2</div>
+<div class="version">版本：v2.4</div>
 
 <script>
 var vehicles = [];
@@ -99,7 +92,7 @@ function saveVehicles() {
 function showPlateList() {
     var box = document.getElementById('plateList');
     if (!Array.isArray(vehicles) || vehicles.length === 0) {
-        box.innerHTML = '<div class="empty">没有车辆，请添加或恢复默认</div>';
+        box.innerHTML = '<div class="empty">没有车辆，请添加</div>';
         return;
     }
     var html = '';
@@ -149,14 +142,6 @@ function delPlate(id) {
     saveVehicles();
     alert('已删除');
     showPlateList();
-}
-
-function resetVehicles() {
-    if (!confirm('确定恢复默认的16辆车吗？这会覆盖当前车辆列表，但不会删除加油记录。')) return;
-    vehicles = JSON.parse(JSON.stringify(DEFAULT_VEHICLES));
-    saveVehicles();
-    showPlateList();
-    alert('已恢复默认车辆');
 }
 
 function init() {
