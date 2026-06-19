@@ -227,36 +227,64 @@ function saveToday() {
     if (!price) { alert('请输入油价'); return; }
     if (todayCars.length === 0) { alert('请至少添加一辆车'); return; }
 
-    var totalAmount = 0;
-    var totalLiters = 0;
-    for (var i = 0; i < todayCars.length; i++) {
-        totalAmount += todayCars[i].amount;
-        totalLiters += todayCars[i].liters;
-    }
-
     var foundIdx = -1;
     for (var i = 0; i < records.length; i++) {
         if (records[i].date === date) { foundIdx = i; break; }
     }
 
     if (foundIdx >= 0) {
-        if (!confirm('该日期已有记录，是否覆盖？点"取消"则追加到原有记录')) {
-            for (var i = 0; i < todayCars.length; i++) {
-                records[foundIdx].cars.push(todayCars[i]);
-            }
-            records[foundIdx].totalAmount = 0;
-            records[foundIdx].totalLiters = 0;
-            for (var i = 0; i < records[foundIdx].cars.length; i++) {
-                records[foundIdx].totalAmount += records[foundIdx].cars[i].amount;
-                records[foundIdx].totalLiters += records[foundIdx].cars[i].liters;
-            }
-        } else {
-            records[foundIdx] = {
-                id: records[foundIdx].id, date: date, price: price,
-                cars: todayCars, totalAmount: totalAmount, totalLiters: totalLiters
-            };
+        // 已有记录，检查是否有重复车辆
+        var existingPlates = {};
+        for (var j = 0; j < records[foundIdx].cars.length; j++) {
+            existingPlates[records[foundIdx].cars[j].plate] = true;
         }
+
+        var duplicateCars = [];
+        var newCars = [];
+
+        for (var i = 0; i < todayCars.length; i++) {
+            if (existingPlates[todayCars[i].plate]) {
+                duplicateCars.push(todayCars[i]);
+            } else {
+                newCars.push(todayCars[i]);
+            }
+        }
+
+        // 先追加不重复的车
+        for (var i = 0; i < newCars.length; i++) {
+            records[foundIdx].cars.push(newCars[i]);
+        }
+
+        // 如果有重复的车，询问是否也追加
+        if (duplicateCars.length > 0) {
+            var plateNames = [];
+            for (var i = 0; i < duplicateCars.length; i++) {
+                plateNames.push(duplicateCars[i].plate);
+            }
+            if (confirm('该车辆今日已经加过一次油，是否再次添加？\n\n重复车辆：' + plateNames.join('、'))) {
+                for (var i = 0; i < duplicateCars.length; i++) {
+                    records[foundIdx].cars.push(duplicateCars[i]);
+                }
+            }
+        }
+
+        // 重新计算合计
+        records[foundIdx].totalAmount = 0;
+        records[foundIdx].totalLiters = 0;
+        for (var i = 0; i < records[foundIdx].cars.length; i++) {
+            records[foundIdx].totalAmount += records[foundIdx].cars[i].amount;
+            records[foundIdx].totalLiters += records[foundIdx].cars[i].liters;
+        }
+        records[foundIdx].price = price;
     } else {
+        // 新记录
+        var totalAmount = 0;
+        var totalLiters = 0;
+        for (var i = 0; i < todayCars.length; i++) {
+            totalAmount += todayCars[i].amount;
+            totalLiters += todayCars[i].liters;
+        }
+
         var maxId = 0;
         for (var i = 0; i < records.length; i++) {
             if (records[i].id > maxId) maxId = records[i].id;
