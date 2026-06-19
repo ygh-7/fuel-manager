@@ -19,18 +19,27 @@ h1 { text-align: center; font-size: 22px; color: #d84315; margin: 10px 0; }
 .card-title { font-size: 15px; font-weight: bold; color: #444; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #f5f5f5; }
 
 label { display: block; font-size: 14px; font-weight: bold; color: #555; margin: 10px 0 4px 0; }
-select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; }
+select, input { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; }
 
 .btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; color: #fff; background: #ff9800; display: block; text-align: center; }
 .btn-blue { background: #42a5f5; }
 .btn-gray { background: #78909c; }
 .btn-red { background: #ef5350; }
 .btn-green { background: #4caf50; }
+.btn-sm { width: auto; padding: 6px 12px; font-size: 13px; margin-top: 0; display: inline-block; }
 
 .history-row { background: #fff; border-radius: 10px; padding: 12px; margin: 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .history-date { font-weight: bold; font-size: 15px; }
 .history-info { font-size: 13px; color: #666; margin-top: 4px; }
 .history-money { font-weight: bold; color: #e65100; }
+.history-actions { margin-top: 8px; display: flex; gap: 8px; }
+
+.edit-form { background: #f5f5f5; border-radius: 8px; padding: 12px; margin-top: 10px; }
+.edit-form label { font-size: 13px; margin: 6px 0 2px 0; }
+.edit-form input, .edit-form select { padding: 8px; font-size: 14px; margin-bottom: 6px; }
+.edit-car-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; background: #fff; padding: 8px; border-radius: 6px; }
+.edit-car-row span { flex: 1; font-size: 14px; }
+.edit-car-row input { flex: 1; margin: 0; }
 
 .report-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
 .report-table th, .report-table td { border: 1px solid #333; padding: 6px; text-align: center; }
@@ -41,7 +50,6 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
 .empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
 .tip-box { background: #e3f2fd; border-left: 3px solid #2196f3; padding: 10px; border-radius: 8px; margin: 8px 0; font-size: 13px; color: #1565c0; }
 
-/* 导出弹窗 */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; }
 .modal-box { background: #fff; border-radius: 16px; width: 90%; max-width: 400px; padding: 20px; text-align: center; max-height: 90vh; overflow-y: auto; }
 .modal-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
@@ -56,7 +64,6 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
 .img-preview-box p { font-size: 13px; color: #e65100; margin-bottom: 8px; font-weight: bold; }
 .img-preview-box img { width: 100%; border-radius: 6px; display: block; }
 
-/* 打印样式 */
 @media print {
     body * { visibility: hidden; }
     #printArea, #printArea * { visibility: visible; }
@@ -108,7 +115,7 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
 </div>
 
 <div class="card">
-    <div class="card-title">历史记录</div>
+    <div class="card-title">历史记录（可编辑/删除）</div>
     <div id="historyList"></div>
 </div>
 
@@ -122,29 +129,24 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
 <div id="exportModal" class="modal-overlay">
     <div class="modal-box">
         <div class="modal-title">报表已生成</div>
-        <div class="modal-desc">
-            微信内 PDF 容易找不到，<br><strong>推荐用「保存为图片」最稳定</strong>
-        </div>
-
+        <div class="modal-desc">微信内 PDF 容易找不到，<br><strong>推荐用「保存为图片」最稳定</strong></div>
         <a id="pdfDownloadLink" href="#" class="modal-btn modal-btn-orange" download>📄 下载 PDF 文件</a>
-
         <button class="modal-btn modal-btn-blue" onclick="previewPdf()">👁 预览 PDF（可转发）</button>
-
         <button class="modal-btn modal-btn-green" onclick="exportImage()">🖼 保存为图片（推荐）</button>
-
         <div id="imgPreviewBox" class="img-preview-box">
             <p>👇 长按下方图片 → 选择「保存图片」</p>
             <img id="previewImg" src="" alt="报表图片">
         </div>
-
         <button class="modal-btn modal-btn-gray" onclick="closeExportModal()" style="margin-top:5px;">关闭</button>
     </div>
 </div>
 
 <script>
 var records = [];
+var vehicles = [];
 var pdfBlobUrl = null;
 var currentFilename = '';
+var editingId = null;
 
 var DEFAULT_VEHICLES = [
     {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
@@ -158,22 +160,30 @@ var DEFAULT_VEHICLES = [
 function loadData() {
     try {
         var r = localStorage.getItem('fuel_records');
+        var v = localStorage.getItem('fuel_vehicles');
         if (r) {
             var parsed = JSON.parse(r);
-            if (Array.isArray(parsed)) {
-                records = parsed;
-            }
+            if (Array.isArray(parsed)) records = parsed;
+        }
+        if (v) {
+            var parsedV = JSON.parse(v);
+            if (Array.isArray(parsedV) && parsedV.length > 0) vehicles = parsedV;
         }
     } catch(e) {
-        console.log('记录读取失败');
+        console.log('数据读取失败');
     }
-    if (!Array.isArray(records)) {
-        records = [];
+    if (!Array.isArray(records)) records = [];
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+        vehicles = JSON.parse(JSON.stringify(DEFAULT_VEHICLES));
     }
 }
 
+function saveRecords() {
+    try { localStorage.setItem('fuel_records', JSON.stringify(records)); } catch(e) {}
+}
+
 function saveVehicles() {
-    try { localStorage.setItem('fuel_vehicles', JSON.stringify(DEFAULT_VEHICLES)); } catch(e) {}
+    try { localStorage.setItem('fuel_vehicles', JSON.stringify(vehicles)); } catch(e) {}
 }
 
 function pad2(n) {
@@ -402,7 +412,6 @@ function exportImage() {
         img.src = imgData;
         previewBox.style.display = 'block';
 
-        // 滚动到图片位置
         setTimeout(function() {
             img.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
@@ -417,6 +426,8 @@ function closeExportModal() {
     document.getElementById('imgPreviewBox').style.display = 'none';
 }
 
+// ==================== 编辑/删除功能 ====================
+
 function showHistory() {
     var box = document.getElementById('historyList');
     if (!Array.isArray(records) || records.length === 0) {
@@ -426,14 +437,249 @@ function showHistory() {
     var html = '';
     for (var i = records.length - 1; i >= 0; i--) {
         var r = records[i];
-        html += '<div class="history-row">' +
+        var editFormId = 'editForm_' + r.id;
+        html += '<div class="history-row" id="historyRow_' + r.id + '">' +
             '<div class="history-date">' + r.date + '</div>' +
             '<div class="history-info">' +
             '油价' + r.price + '元/升 · ' + r.cars.length + '辆车 · ' + r.totalLiters.toFixed(1) + '升' +
             '<span style="float:right;" class="history-money">' + r.totalAmount.toFixed(2) + '元</span>' +
-            '</div></div>';
+            '</div>' +
+            '<div class="history-actions">' +
+            '<button class="btn btn-blue btn-sm" onclick="editRecord(' + r.id + ')">编辑</button>' +
+            '<button class="btn btn-red btn-sm" onclick="deleteRecord(' + r.id + ')">删除</button>' +
+            '</div>' +
+            '<div id="' + editFormId + '" style="display:none;"></div>' +
+            '</div>';
     }
     box.innerHTML = html;
+}
+
+function editRecord(id) {
+    // 如果正在编辑其他记录，先关闭
+    if (editingId !== null && editingId !== id) {
+        var oldForm = document.getElementById('editForm_' + editingId);
+        if (oldForm) oldForm.style.display = 'none';
+    }
+
+    editingId = id;
+    var formBox = document.getElementById('editForm_' + id);
+
+    // 找到要编辑的记录
+    var record = null;
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].id === id) { record = records[i]; break; }
+    }
+    if (!record) { alert('记录不存在'); return; }
+
+    // 构建编辑表单
+    var html = '<div class="edit-form">';
+    html += '<div style="font-weight:bold;font-size:14px;margin-bottom:8px;color:#333;">编辑记录</div>';
+
+    html += '<label>日期</label>';
+    html += '<input type="date" id="editDate_' + id + '" value="' + record.date + '">';
+
+    html += '<label>油价（元/升）</label>';
+    html += '<input type="text" id="editPrice_' + id + '" value="' + record.price + '">';
+
+    html += '<div style="font-weight:bold;font-size:14px;margin:10px 0 6px 0;">车辆加油明细</div>';
+
+    for (var j = 0; j < record.cars.length; j++) {
+        var c = record.cars[j];
+        html += '<div class="edit-car-row">' +
+            '<span>' + c.plate + '</span>' +
+            '<input type="text" id="editCar_' + id + '_' + j + '" value="' + c.liters + '" placeholder="加油量">' +
+            '<button class="btn btn-red btn-sm" onclick="removeCarFromRecord(' + id + ', ' + j + ')">删除该车</button>' +
+            '</div>';
+    }
+
+    // 添加新车
+    html += '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ccc;">';
+    html += '<div style="font-weight:bold;font-size:13px;margin-bottom:6px;">添加车辆</div>';
+    html += '<select id="editAddPlate_' + id + '"><option value="">选择车牌...</option>';
+    for (var k = 0; k < vehicles.length; k++) {
+        html += '<option value="' + vehicles[k].plate + '">' + vehicles[k].plate + '</option>';
+    }
+    html += '</select>';
+    html += '<input type="text" id="editAddLiters_' + id + '" placeholder="加油量（升）" style="margin-top:6px;">';
+    html += '<button class="btn btn-green btn-sm" onclick="addCarToRecord(' + id + ')" style="margin-top:6px;">添加该车</button>';
+    html += '</div>';
+
+    html += '<div style="display:flex;gap:8px;margin-top:12px;">';
+    html += '<button class="btn btn-green" onclick="saveEditRecord(' + id + ')" style="flex:1;">保存修改</button>';
+    html += '<button class="btn btn-gray" onclick="cancelEdit(' + id + ')" style="flex:1;">取消</button>';
+    html += '</div>';
+
+    html += '</div>';
+
+    formBox.innerHTML = html;
+    formBox.style.display = 'block';
+}
+
+function cancelEdit(id) {
+    var formBox = document.getElementById('editForm_' + id);
+    if (formBox) {
+        formBox.style.display = 'none';
+        formBox.innerHTML = '';
+    }
+    editingId = null;
+}
+
+function removeCarFromRecord(recordId, carIndex) {
+    if (!confirm('确定删除这辆车吗？')) return;
+
+    var record = null;
+    var recordIdx = -1;
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].id === recordId) { record = records[i]; recordIdx = i; break; }
+    }
+    if (!record) return;
+
+    var newCars = [];
+    for (var j = 0; j < record.cars.length; j++) {
+        if (j !== carIndex) newCars.push(record.cars[j]);
+    }
+
+    if (newCars.length === 0) {
+        if (!confirm('删除最后一辆车后该记录将为空，是否删除整条记录？')) return;
+        records.splice(recordIdx, 1);
+        saveRecords();
+        showHistory();
+        return;
+    }
+
+    record.cars = newCars;
+    // 重新计算合计
+    record.totalAmount = 0;
+    record.totalLiters = 0;
+    for (var j = 0; j < newCars.length; j++) {
+        newCars[j].amount = Math.round(newCars[j].liters * record.price * 100) / 100;
+        record.totalAmount += newCars[j].amount;
+        record.totalLiters += newCars[j].liters;
+    }
+
+    saveRecords();
+    editRecord(recordId); // 刷新编辑表单
+    showHistory();
+}
+
+function addCarToRecord(recordId) {
+    var plate = document.getElementById('editAddPlate_' + recordId).value;
+    var liters = parseFloat(document.getElementById('editAddLiters_' + recordId).value);
+
+    if (!plate) { alert('请选择车牌'); return; }
+    if (!liters || liters <= 0) { alert('请输入加油量'); return; }
+
+    var record = null;
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].id === recordId) { record = records[i]; break; }
+    }
+    if (!record) return;
+
+    // 检查是否已存在
+    for (var j = 0; j < record.cars.length; j++) {
+        if (record.cars[j].plate === plate) {
+            alert('该车辆已存在，请直接修改其加油量');
+            return;
+        }
+    }
+
+    var amount = Math.round(liters * record.price * 100) / 100;
+    record.cars.push({plate: plate, liters: liters, amount: amount});
+    record.totalAmount += amount;
+    record.totalLiters += liters;
+
+    saveRecords();
+    editRecord(recordId); // 刷新编辑表单
+    showHistory();
+}
+
+function saveEditRecord(id) {
+    var record = null;
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].id === id) { record = records[i]; break; }
+    }
+    if (!record) { alert('记录不存在'); return; }
+
+    var newDate = document.getElementById('editDate_' + id).value;
+    var newPrice = parseFloat(document.getElementById('editPrice_' + id).value);
+
+    if (!newDate) { alert('请选择日期'); return; }
+    if (!newPrice || newPrice <= 0) { alert('请输入油价'); return; }
+
+    // 更新每辆车的加油量
+    var newCars = [];
+    var totalLiters = 0;
+    var totalAmount = 0;
+
+    for (var j = 0; j < record.cars.length; j++) {
+        var litersInput = document.getElementById('editCar_' + id + '_' + j);
+        if (!litersInput) continue;
+        var liters = parseFloat(litersInput.value);
+        if (!liters || liters <= 0) {
+            alert('第' + (j+1) + '辆车的加油量无效');
+            return;
+        }
+        var amount = Math.round(liters * newPrice * 100) / 100;
+        newCars.push({plate: record.cars[j].plate, liters: liters, amount: amount});
+        totalLiters += liters;
+        totalAmount += amount;
+    }
+
+    // 检查日期是否与其他记录冲突
+    if (newDate !== record.date) {
+        for (var i = 0; i < records.length; i++) {
+            if (records[i].id !== id && records[i].date === newDate) {
+                if (!confirm('该日期已有其他记录，是否合并？点"取消"则放弃修改')) {
+                    return;
+                }
+                // 合并到已有记录
+                var target = records[i];
+                for (var j = 0; j < newCars.length; j++) {
+                    target.cars.push(newCars[j]);
+                }
+                target.totalAmount += totalAmount;
+                target.totalLiters += totalLiters;
+                // 删除当前记录
+                for (var k = 0; k < records.length; k++) {
+                    if (records[k].id === id) {
+                        records.splice(k, 1);
+                        break;
+                    }
+                }
+                saveRecords();
+                cancelEdit(id);
+                showHistory();
+                alert('已合并到 ' + newDate + ' 的记录');
+                return;
+            }
+        }
+    }
+
+    record.date = newDate;
+    record.price = newPrice;
+    record.cars = newCars;
+    record.totalLiters = totalLiters;
+    record.totalAmount = totalAmount;
+
+    saveRecords();
+    cancelEdit(id);
+    showHistory();
+    alert('保存成功');
+}
+
+function deleteRecord(id) {
+    if (!confirm('确定删除这条记录吗？删除后无法恢复！')) return;
+
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].id === id) {
+            records.splice(i, 1);
+            break;
+        }
+    }
+
+    saveRecords();
+    showHistory();
+    alert('已删除');
 }
 
 function resetVehicles() {
