@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>报表导出 - 油费管理系统</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: Arial, "Microsoft YaHei", sans-serif; background: #f0f2f5; font-size: 16px; margin: 0; padding: 0 12px 60px 12px; }
@@ -24,6 +25,7 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
 .btn-blue { background: #42a5f5; }
 .btn-gray { background: #78909c; }
 .btn-red { background: #ef5350; }
+.btn-green { background: #4caf50; }
 
 .history-row { background: #fff; border-radius: 10px; padding: 12px; margin: 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .history-date { font-weight: bold; font-size: 15px; }
@@ -39,6 +41,21 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
 .empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
 .tip-box { background: #e3f2fd; border-left: 3px solid #2196f3; padding: 10px; border-radius: 8px; margin: 8px 0; font-size: 13px; color: #1565c0; }
 
+/* 导出弹窗 */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; }
+.modal-box { background: #fff; border-radius: 16px; width: 90%; max-width: 400px; padding: 20px; text-align: center; max-height: 90vh; overflow-y: auto; }
+.modal-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+.modal-desc { font-size: 13px; color: #666; margin-bottom: 15px; line-height: 1.5; }
+.modal-btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 10px; cursor: pointer; text-decoration: none; }
+.modal-btn-orange { background: #ff9800; }
+.modal-btn-blue { background: #42a5f5; }
+.modal-btn-green { background: #4caf50; }
+.modal-btn-gray { background: #eee; color: #666; }
+
+.img-preview-box { display: none; margin-top: 15px; border: 2px dashed #ccc; border-radius: 10px; padding: 10px; background: #fafafa; }
+.img-preview-box p { font-size: 13px; color: #e65100; margin-bottom: 8px; font-weight: bold; }
+.img-preview-box img { width: 100%; border-radius: 6px; display: block; }
+
 /* 打印样式 */
 @media print {
     body * { visibility: hidden; }
@@ -46,9 +63,6 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
     #printArea { position: absolute; left: 0; top: 0; width: 100%; }
     .nav, .card { display: none !important; }
 }
-
-/* PDF预览区域 */
-#pdfArea { background: #fff; padding: 20px; }
 </style>
 </head>
 <body>
@@ -86,14 +100,11 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
 </div>
 
 <div id="printArea" style="display:none; margin-top:12px;">
-    <div id="pdfArea"></div>
+    <div id="pdfArea" style="background:#fff; padding:15px;"></div>
 </div>
 
 <div id="printBtnBox" style="display:none; margin-top:10px;">
-    <button class="btn btn-gray" onclick="exportReport()">导出PDF文件</button>
-    <div style="font-size:12px;color:#666;text-align:center;margin-top:6px;">
-        点击后自动下载PDF，请在手机"下载"文件夹中查看
-    </div>
+    <button class="btn btn-gray" onclick="exportReport()">导出报表文件</button>
 </div>
 
 <div class="card">
@@ -107,8 +118,33 @@ select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; bo
     <button class="btn btn-red" onclick="resetVehicles()">恢复默认车辆数据</button>
 </div>
 
+<!-- 导出选择弹窗 -->
+<div id="exportModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">报表已生成</div>
+        <div class="modal-desc">
+            微信内 PDF 容易找不到，<br><strong>推荐用「保存为图片」最稳定</strong>
+        </div>
+
+        <a id="pdfDownloadLink" href="#" class="modal-btn modal-btn-orange" download>📄 下载 PDF 文件</a>
+
+        <button class="modal-btn modal-btn-blue" onclick="previewPdf()">👁 预览 PDF（可转发）</button>
+
+        <button class="modal-btn modal-btn-green" onclick="exportImage()">🖼 保存为图片（推荐）</button>
+
+        <div id="imgPreviewBox" class="img-preview-box">
+            <p>👇 长按下方图片 → 选择「保存图片」</p>
+            <img id="previewImg" src="" alt="报表图片">
+        </div>
+
+        <button class="modal-btn modal-btn-gray" onclick="closeExportModal()" style="margin-top:5px;">关闭</button>
+    </div>
+</div>
+
 <script>
 var records = [];
+var pdfBlobUrl = null;
+var currentFilename = '';
 
 var DEFAULT_VEHICLES = [
     {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
@@ -131,7 +167,6 @@ function loadData() {
     } catch(e) {
         console.log('记录读取失败');
     }
-
     if (!Array.isArray(records)) {
         records = [];
     }
@@ -316,33 +351,70 @@ function exportReport() {
     }
 
     var now = new Date();
-    var filename = '油费报表_' + now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate()) + '.pdf';
+    currentFilename = '油费报表_' + now.getFullYear() + pad2(now.getMonth()+1) + pad2(now.getDate()) + '.pdf';
 
     var opt = {
         margin: [10, 10, 10, 10],
-        filename: filename,
+        filename: currentFilename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // 显示加载提示
     var btn = document.querySelector('#printBtnBox .btn');
     var originalText = btn.innerHTML;
-    btn.innerHTML = '正在生成PDF...';
+    btn.innerHTML = '正在生成...';
     btn.disabled = true;
 
-    html2pdf().set(opt).from(element).save().then(function() {
+    html2pdf().set(opt).from(element).output('bloburl').then(function(url) {
+        pdfBlobUrl = url;
         btn.innerHTML = originalText;
         btn.disabled = false;
-        alert('PDF已下载！请在手机的"下载"或"文件管理"中查看：' + filename);
+
+        var link = document.getElementById('pdfDownloadLink');
+        link.href = url;
+        link.download = currentFilename;
+
+        document.getElementById('exportModal').style.display = 'flex';
     }).catch(function(err) {
         btn.innerHTML = originalText;
         btn.disabled = false;
         console.log(err);
-        // 如果html2pdf失败，fallback到window.print
-        window.print();
+        alert('生成失败，请检查网络后重试');
     });
+}
+
+function previewPdf() {
+    if (pdfBlobUrl) {
+        window.open(pdfBlobUrl, '_blank');
+    }
+}
+
+function exportImage() {
+    var element = document.getElementById('pdfArea');
+    var previewBox = document.getElementById('imgPreviewBox');
+    var img = document.getElementById('previewImg');
+
+    previewBox.style.display = 'none';
+
+    html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
+        var imgData = canvas.toDataURL('image/png');
+        img.src = imgData;
+        previewBox.style.display = 'block';
+
+        // 滚动到图片位置
+        setTimeout(function() {
+            img.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+    }).catch(function(err) {
+        console.log(err);
+        alert('图片生成失败，请重试');
+    });
+}
+
+function closeExportModal() {
+    document.getElementById('exportModal').style.display = 'none';
+    document.getElementById('imgPreviewBox').style.display = 'none';
 }
 
 function showHistory() {
