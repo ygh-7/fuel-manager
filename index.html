@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>记油费 - 油费管理系统</title>
 <style>
-* { margin:0; padding:0; }
+* { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: Arial, "Microsoft YaHei", sans-serif; background: #f0f2f5; font-size: 16px; margin: 0; padding: 0 12px 60px 12px; }
 h1 { text-align: center; font-size: 22px; color: #d84315; margin: 10px 0; }
 
@@ -33,6 +33,8 @@ input, select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #
 .total-box { background: #e65100; color: #fff; border-radius: 10px; padding: 14px; text-align: center; margin: 10px 0; }
 .total-box .big { font-size: 28px; font-weight: bold; }
 .total-box .small { font-size: 13px; margin-top: 4px; }
+
+.tip-box { background: #e3f2fd; border-left: 3px solid #2196f3; padding: 10px; border-radius: 8px; margin: 8px 0; font-size: 13px; color: #1565c0; }
 </style>
 </head>
 <body>
@@ -74,28 +76,48 @@ input, select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #
     <button class="btn btn-gray" onclick="resetToday()">清空重记</button>
 </div>
 
+<div class="card" style="margin-top:20px;">
+    <div class="card-title">系统维护</div>
+    <div class="tip-box">如果车牌下拉框为空或数据异常，请点击下方按钮重置。</div>
+    <button class="btn btn-red" onclick="resetAllData()">重置系统数据（恢复默认车辆）</button>
+</div>
+
 <script>
 var vehicles = [];
 var records = [];
 var todayCars = [];
 
+var DEFAULT_VEHICLES = [
+    {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
+    {id:4, plate:"云E37261"}, {id:5, plate:"桂AAG276"}, {id:6, plate:"桂AAE552"},
+    {id:7, plate:"云F92105"}, {id:8, plate:"云E53286"}, {id:9, plate:"云E38259"},
+    {id:10, plate:"卡特挖机"}, {id:11, plate:"云E96105"}, {id:12, plate:"云E37951"},
+    {id:13, plate:"桂AAC807"}, {id:14, plate:"云E35052"}, {id:15, plate:"云E52737"},
+    {id:16, plate:"云E55476"}
+];
+
 function loadData() {
     try {
         var v = localStorage.getItem('fuel_vehicles');
         var r = localStorage.getItem('fuel_records');
-        if (v) vehicles = JSON.parse(v);
-        if (r) records = JSON.parse(r);
-    } catch(e) {}
+        if (v) {
+            var parsed = JSON.parse(v);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                vehicles = parsed;
+            }
+        }
+        if (r) {
+            var parsedR = JSON.parse(r);
+            if (Array.isArray(parsedR)) {
+                records = parsedR;
+            }
+        }
+    } catch(e) {
+        console.log('数据读取失败，使用默认数据');
+    }
 
-    if (vehicles.length === 0) {
-        vehicles = [
-            {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
-            {id:4, plate:"云E37261"}, {id:5, plate:"桂AAG276"}, {id:6, plate:"桂AAE552"},
-            {id:7, plate:"云F92105"}, {id:8, plate:"云E53286"}, {id:9, plate:"云E38259"},
-            {id:10, plate:"卡特挖机"}, {id:11, plate:"云E96105"}, {id:12, plate:"云E37951"},
-            {id:13, plate:"桂AAC807"}, {id:14, plate:"云E35052"}, {id:15, plate:"云E52737"},
-            {id:16, plate:"云E55476"}
-        ];
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+        vehicles = JSON.parse(JSON.stringify(DEFAULT_VEHICLES));
         saveVehicles();
     }
 }
@@ -111,6 +133,15 @@ function saveRecords() {
 function loadPlateSelect() {
     var sel = document.getElementById('inpPlate');
     sel.innerHTML = '<option value="">请选择...</option>';
+
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.innerHTML = "【暂无车辆，请重置系统数据】";
+        sel.appendChild(opt);
+        return;
+    }
+
     for (var i = 0; i < vehicles.length; i++) {
         var opt = document.createElement('option');
         opt.value = vehicles[i].plate;
@@ -205,8 +236,7 @@ function saveToday() {
     }
 
     if (foundIdx >= 0) {
-        if (!confirm('该日期已有记录，是否覆盖？
-点"取消"则追加到原有记录')) {
+        if (!confirm('该日期已有记录，是否覆盖？点"取消"则追加到原有记录')) {
             for (var i = 0; i < todayCars.length; i++) {
                 records[foundIdx].cars.push(todayCars[i]);
             }
@@ -244,6 +274,15 @@ function resetToday() {
     document.getElementById('inpLiters').value = '';
     document.getElementById('todayList').innerHTML = '';
     document.getElementById('todayTotalBox').style.display = 'none';
+}
+
+function resetAllData() {
+    if (!confirm('确定要重置系统数据吗？这会恢复默认的16辆车，但不会删除已保存的加油记录。')) return;
+
+    vehicles = JSON.parse(JSON.stringify(DEFAULT_VEHICLES));
+    saveVehicles();
+    loadPlateSelect();
+    alert('已重置为默认车辆，请重新选择车牌');
 }
 
 function pad2(n) {
