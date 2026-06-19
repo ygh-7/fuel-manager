@@ -3,563 +3,238 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>油费管理系统</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<title>记油费 - 油费管理系统</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #f0f2f5; font-size: 16px; color: #333; line-height: 1.6;
-    padding-bottom: 50px;
-}
-.container { max-width: 600px; margin: 0 auto; padding: 12px; }
-h1 { text-align: center; font-size: 24px; color: #d84315; margin: 12px 0 16px; font-weight: 700; }
+* { margin:0; padding:0; }
+body { font-family: Arial, "Microsoft YaHei", sans-serif; background: #f0f2f5; font-size: 16px; margin: 0; padding: 0 12px 60px 12px; }
+h1 { text-align: center; font-size: 22px; color: #d84315; margin: 10px 0; }
 
-.nav-tabs {
-    display: flex; gap: 8px; margin-bottom: 16px;
-    background: #fff; padding: 6px; border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.nav-tab {
-    flex: 1; text-align: center; padding: 12px 4px;
-    border-radius: 10px; font-size: 15px; font-weight: 600;
-    border: none; background: transparent; color: #666;
-    cursor: pointer; transition: all 0.2s;
-}
-.nav-tab.active {
-    background: #fff3e0; color: #e65100;
-    box-shadow: 0 1px 4px rgba(230,81,0,0.15);
-}
+.nav { display: flex; gap: 6px; margin-bottom: 12px; background: #fff; padding: 5px; border-radius: 10px; }
+.nav a { flex: 1; padding: 10px 2px; font-size: 14px; font-weight: bold; border-radius: 8px; background: #eee; color: #666; text-align: center; text-decoration: none; display: block; }
+.nav a.active { background: #ff9800; color: #fff; }
 
-.page { display: none; }
-.page.active { display: block; }
+.card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.card-title { font-size: 15px; font-weight: bold; color: #444; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #f5f5f5; }
 
-.card {
-    background: #fff; border-radius: 14px; padding: 16px;
-    margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.card-title {
-    font-size: 17px; font-weight: 700; color: #444;
-    margin-bottom: 12px; padding-bottom: 10px;
-    border-bottom: 2px solid #f5f5f5;
-    display: flex; align-items: center; gap: 6px;
-}
+label { display: block; font-size: 14px; font-weight: bold; color: #555; margin: 10px 0 4px 0; }
+input, select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; }
 
-.form-group { margin-bottom: 14px; }
-label { display: block; font-size: 15px; font-weight: 600; color: #555; margin-bottom: 6px; }
-input, select, textarea {
-    width: 100%; padding: 14px; font-size: 17px;
-    border: 2px solid #e0e0e0; border-radius: 10px;
-    outline: none; background: #fafafa;
-    font-family: inherit;
-}
-input:focus, select:focus, textarea:focus { border-color: #ff9800; background: #fff; }
-select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 40px; }
+.btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; color: #fff; background: #ff9800; display: block; text-align: center; }
+.btn-green { background: #4caf50; }
+.btn-red { background: #ef5350; }
+.btn-gray { background: #78909c; }
+.btn-sm { width: auto; padding: 6px 12px; font-size: 13px; margin-top: 0; display: inline-block; }
 
-.input-row { display: flex; gap: 10px; align-items: flex-end; }
-.input-row .form-group { flex: 1; margin-bottom: 0; }
-.input-row .form-group:first-child { flex: 1.5; }
+.item-box { background: #fff8e1; border-left: 3px solid #ff9800; padding: 10px; border-radius: 8px; margin: 8px 0; }
+.item-title { font-weight: bold; font-size: 15px; }
+.item-info { font-size: 13px; color: #666; margin-top: 2px; }
+.item-right { text-align: right; font-weight: bold; color: #e65100; font-size: 16px; }
 
-.btn {
-    width: 100%; padding: 14px; font-size: 17px; font-weight: 700;
-    border: none; border-radius: 10px; cursor: pointer;
-    transition: all 0.15s; margin-top: 10px; color: #fff;
-}
-.btn:active { transform: scale(0.98); opacity: 0.9; }
-.btn-primary { background: #ff9800; }
-.btn-success { background: #4caf50; }
-.btn-danger { background: #ef5350; }
-.btn-info { background: #42a5f5; }
-.btn-secondary { background: #78909c; }
-.btn-sm { width: auto; padding: 8px 14px; font-size: 14px; margin-top: 0; }
-
-.today-list { margin-top: 12px; }
-.today-item {
-    display: flex; justify-content: space-between; align-items: center;
-    background: #fff8e1; border-left: 4px solid #ff9800;
-    padding: 12px 14px; border-radius: 10px; margin-bottom: 10px;
-}
-.today-item-info { flex: 1; }
-.today-item-plate { font-size: 16px; font-weight: 700; color: #333; }
-.today-item-detail { font-size: 14px; color: #666; margin-top: 2px; }
-.today-item-amount { font-size: 18px; font-weight: 700; color: #e65100; margin-right: 10px; }
-.today-item-del { background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600; }
-
-.total-bar {
-    background: #e65100; color: #fff; border-radius: 12px;
-    padding: 18px; text-align: center; margin-top: 14px;
-}
-.total-bar-label { font-size: 15px; opacity: 0.9; }
-.total-bar-value { font-size: 32px; font-weight: 700; margin-top: 4px; }
-.total-bar-detail { font-size: 14px; opacity: 0.85; margin-top: 4px; }
-
-.vehicle-list { margin-top: 10px; }
-.vehicle-item {
-    display: flex; justify-content: space-between; align-items: center;
-    background: #f5f5f5; padding: 12px 14px; border-radius: 10px; margin-bottom: 8px;
-}
-.vehicle-plate { font-size: 16px; font-weight: 700; color: #333; }
-
-.history-item {
-    background: #fff; border-radius: 12px; padding: 14px;
-    margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    cursor: pointer; transition: background 0.2s;
-}
-.history-item:active { background: #f5f5f5; }
-.history-date { font-size: 17px; font-weight: 700; color: #333; }
-.history-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 14px; color: #666; }
-.history-amount { font-weight: 700; color: #e65100; font-size: 16px; }
-
-.report-controls { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-.report-controls .form-group { flex: 1; min-width: 140px; margin-bottom: 0; }
-
-#reportPreview {
-    background: #fff; padding: 24px; border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15); margin: 16px 0; display: none;
-}
-#reportPreview.active { display: block; }
-
-.report-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #000; }
-.report-subtitle { text-align: center; font-size: 14px; color: #333; margin-bottom: 24px; }
-.report-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 14px; }
-.report-table th, .report-table td { border: 1px solid #333; padding: 8px 10px; text-align: center; }
-.report-table th { background: #f5f5f5; font-weight: 700; }
-.report-table td { color: #000; }
-.report-table .text-left { text-align: left; }
-.report-table .text-right { text-align: right; }
-.report-day-total { text-align: right; font-weight: 700; padding: 8px 10px; border: 1px solid #333; border-top: 2px solid #333; background: #fff8e1; }
-.report-summary-title { font-size: 16px; font-weight: 700; margin: 24px 0 12px; color: #000; border-bottom: 2px solid #000; padding-bottom: 6px; }
-
-.empty { text-align: center; padding: 40px 20px; color: #999; font-size: 15px; }
-
-.toast {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.8); color: #fff; padding: 14px 24px;
-    border-radius: 10px; font-size: 15px; z-index: 1000; display: none; pointer-events: none;
-}
-
-.modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-    z-index: 999; justify-content: center; align-items: center; padding: 20px;
-}
-.modal-overlay.active { display: flex; }
-.modal-box { background: #fff; border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; max-height: 80vh; overflow-y: auto; }
-.modal-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; text-align: center; }
-.modal-btns { display: flex; gap: 10px; margin-top: 16px; }
-.modal-btns .btn { margin-top: 0; flex: 1; }
-
-.status-bar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: #263238; color: #fff; font-size: 12px;
-    padding: 8px 12px; text-align: center; z-index: 500;
-}
-.status-bar.ok { background: #2e7d32; }
-.status-bar.warn { background: #f57c00; }
-.status-bar.err { background: #c62828; }
-
-.warn-box {
-    background: #fff3e0; border: 2px solid #ff9800; border-radius: 10px;
-    padding: 12px; margin-bottom: 14px; font-size: 14px; color: #e65100;
-}
-
-@media print {
-    body * { visibility: hidden; }
-    #reportPreview, #reportPreview * { visibility: visible; }
-    #reportPreview { position: absolute; left: 0; top: 0; width: 100%; display: block !important; box-shadow: none; margin: 0; }
-    .status-bar, .warn-box, .nav-tabs, .card, #reportActions { display: none !important; }
-}
+.total-box { background: #e65100; color: #fff; border-radius: 10px; padding: 14px; text-align: center; margin: 10px 0; }
+.total-box .big { font-size: 28px; font-weight: bold; }
+.total-box .small { font-size: 13px; margin-top: 4px; }
 </style>
 </head>
 <body>
-<div class="container">
-    <h1>⛽ 油费管理系统</h1>
+<h1>油费管理系统</h1>
 
-    <div class="nav-tabs" id="navTabs">
-        <button class="nav-tab active" data-page="input">📝 记油费</button>
-        <button class="nav-tab" data-page="vehicles">🚗 车辆管理</button>
-        <button class="nav-tab" data-page="reports">📊 报表导出</button>
-    </div>
-
-    <div class="warn-box" id="warnBox" style="display:none;">
-        ⚠️ 当前无法使用本地存储，数据刷新后会丢失。请定期导出PDF备份。
-    </div>
-
-    <div id="page-input" class="page active">
-        <div class="card">
-            <div class="card-title">📅 今日基本信息</div>
-            <div class="form-group">
-                <label>日期</label>
-                <input type="date" id="inpDate">
-            </div>
-            <div class="form-group">
-                <label>今日油价（元/升）</label>
-                <input type="number" id="inpPrice" step="0.01" placeholder="例如：7.2">
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">⛽ 添加加油记录</div>
-            <div class="form-group">
-                <label>选择车牌</label>
-                <select id="inpPlate"><option value="">请选择车牌...</option></select>
-            </div>
-            <div class="form-group">
-                <label>加油量（升）</label>
-                <input type="number" id="inpLiters" step="0.01" placeholder="例如：248">
-            </div>
-            <button class="btn btn-success" id="btnAddToday">➕ 添加到今日清单</button>
-        </div>
-
-        <div class="card" id="todayCard" style="display:none;">
-            <div class="card-title">📋 今日已添加</div>
-            <div class="today-list" id="todayList"></div>
-            <div class="total-bar">
-                <div class="total-bar-label">今日油费合计</div>
-                <div class="total-bar-value" id="todayTotal">¥0.00</div>
-                <div class="total-bar-detail" id="todayDetail">共0辆车，0.00升</div>
-            </div>
-            <button class="btn btn-primary" id="btnSaveToday" style="margin-top:14px;">💾 保存今日记录</button>
-            <button class="btn btn-secondary" id="btnResetToday" style="margin-top:8px;">🔄 清空重记</button>
-        </div>
-    </div>
-
-    <div id="page-vehicles" class="page">
-        <div class="card">
-            <div class="card-title">➕ 添加新车牌</div>
-            <div class="input-row">
-                <div class="form-group">
-                    <input type="text" id="newPlate" placeholder="输入新车牌，如：云E12345" maxlength="12">
-                </div>
-                <button class="btn btn-success btn-sm" id="btnAddVehicle">添加</button>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title">🚗 已有车牌</div>
-            <div class="vehicle-list" id="vehicleList"></div>
-        </div>
-    </div>
-
-    <div id="page-reports" class="page">
-        <div class="card">
-            <div class="card-title">📊 选择报表</div>
-            <div class="form-group">
-                <label>报表类型</label>
-                <select id="reportType">
-                    <option value="month">月报表</option>
-                    <option value="week">周报表</option>
-                </select>
-            </div>
-            <div class="form-group" id="monthGroup">
-                <label>选择年月</label>
-                <select id="reportYear"></select>
-                <select id="reportMonth" style="margin-top:8px;"></select>
-            </div>
-            <div class="form-group" id="weekGroup" style="display:none;">
-                <label>选择周</label>
-                <select id="reportWeekYear"></select>
-                <select id="reportWeekNum" style="margin-top:8px;"></select>
-            </div>
-            <button class="btn btn-info" id="btnGenReport">🔍 生成报表预览</button>
-        </div>
-
-        <div id="reportPreview">
-            <div id="reportContent"></div>
-        </div>
-
-        <div id="reportActions" style="display:none; margin-top:14px;">
-            <button class="btn btn-primary" id="btnDownloadPDF">📥 下载PDF</button>
-            <button class="btn btn-secondary" id="btnPrint" style="margin-top:8px;">🖨️ 打印 / 另存为PDF</button>
-        </div>
-
-        <div class="card" style="margin-top:16px;">
-            <div class="card-title">📋 历史记录</div>
-            <div id="historyList"></div>
-        </div>
-    </div>
+<div class="nav">
+    <a href="index.html" class="active">记油费</a>
+    <a href="vehicles.html">车辆管理</a>
+    <a href="reports.html">报表导出</a>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="card">
+    <div class="card-title">今日基本信息</div>
+    <label>日期（默认今天，可点击修改）</label>
+    <input type="date" id="inpDate">
 
-<div class="modal-overlay" id="detailModal">
-    <div class="modal-box">
-        <div class="modal-title" id="detailTitle">记录详情</div>
-        <div id="detailBody" style="font-size:15px; line-height:1.8; color:#444;"></div>
-        <div class="modal-btns">
-            <button class="btn btn-secondary" id="btnCloseModal">关闭</button>
-            <button class="btn btn-danger" id="btnDeleteRecord">删除</button>
-        </div>
-    </div>
+    <label>今日油价（元/升）</label>
+    <input type="text" id="inpPrice" placeholder="例如：7.2">
 </div>
 
-<div class="status-bar" id="statusBar">系统启动中...</div>
+<div class="card">
+    <div class="card-title">添加加油记录</div>
+    <label>车牌号</label>
+    <select id="inpPlate"><option value="">请选择...</option></select>
+
+    <label>加油量（升）</label>
+    <input type="text" id="inpLiters" placeholder="例如：248">
+
+    <button class="btn btn-green" onclick="addToday()">添加到今日清单</button>
+</div>
+
+<div id="todayList"></div>
+<div id="todayTotalBox" style="display:none;">
+    <div class="total-box">
+        <div class="big" id="todayTotalMoney">0.00元</div>
+        <div class="small" id="todayTotalInfo">共0辆车，0.00升</div>
+    </div>
+    <button class="btn" onclick="saveToday()">保存今日记录</button>
+    <button class="btn btn-gray" onclick="resetToday()">清空重记</button>
+</div>
 
 <script>
-// ==================== 数据存储 ====================
-var DEFAULT_PLATES = [
-    "云E39069","桂AAM620","云E39392","云E37261","桂AAG276",
-    "桂AAE552","云F92105","云E53286","云E38259","卡特挖机",
-    "云E96105","云E37951","桂AAC807","云E35052","云E52737","云E55476"
-];
-
 var vehicles = [];
 var records = [];
 var todayCars = [];
-var currentDetailDate = null;
-var storageOK = false;
 
-function setStatus(msg, cls) {
-    var bar = document.getElementById('statusBar');
-    bar.textContent = msg;
-    bar.className = 'status-bar' + (cls ? ' ' + cls : '');
-}
-
-function showToast(msg) {
-    var t = document.getElementById('toast');
-    t.textContent = msg; t.style.display = 'block';
-    setTimeout(function() { t.style.display = 'none'; }, 2000);
-}
-
-function initStorage() {
+function loadData() {
     try {
-        localStorage.setItem('_test', '1');
-        localStorage.removeItem('_test');
-        storageOK = true;
-    } catch(e) {
-        storageOK = false;
-        document.getElementById('warnBox').style.display = 'block';
-        setStatus('无法使用本地存储，数据刷新后会丢失', 'warn');
-        return;
-    }
-
-    var v = localStorage.getItem('fuel_vehicles');
-    var r = localStorage.getItem('fuel_records');
-    if (v) vehicles = JSON.parse(v);
-    if (r) records = JSON.parse(r);
+        var v = localStorage.getItem('fuel_vehicles');
+        var r = localStorage.getItem('fuel_records');
+        if (v) vehicles = JSON.parse(v);
+        if (r) records = JSON.parse(r);
+    } catch(e) {}
 
     if (vehicles.length === 0) {
-        for (var i = 0; i < DEFAULT_PLATES.length; i++) {
-            vehicles.push({id: 1000 + i, plate: DEFAULT_PLATES[i]});
-        }
-        localStorage.setItem('fuel_vehicles', JSON.stringify(vehicles));
+        vehicles = [
+            {id:1, plate:"云E39069"}, {id:2, plate:"桂AAM620"}, {id:3, plate:"云E39392"},
+            {id:4, plate:"云E37261"}, {id:5, plate:"桂AAG276"}, {id:6, plate:"桂AAE552"},
+            {id:7, plate:"云F92105"}, {id:8, plate:"云E53286"}, {id:9, plate:"云E38259"},
+            {id:10, plate:"卡特挖机"}, {id:11, plate:"云E96105"}, {id:12, plate:"云E37951"},
+            {id:13, plate:"桂AAC807"}, {id:14, plate:"云E35052"}, {id:15, plate:"云E52737"},
+            {id:16, plate:"云E55476"}
+        ];
+        saveVehicles();
     }
-    setStatus('数据已加载，可以正常使用', 'ok');
 }
 
 function saveVehicles() {
-    if (storageOK) localStorage.setItem('fuel_vehicles', JSON.stringify(vehicles));
+    try { localStorage.setItem('fuel_vehicles', JSON.stringify(vehicles)); } catch(e) {}
 }
+
 function saveRecords() {
-    if (storageOK) localStorage.setItem('fuel_records', JSON.stringify(records));
+    try { localStorage.setItem('fuel_records', JSON.stringify(records)); } catch(e) {}
 }
 
-// ==================== 页面切换 ====================
-function switchTab(pageName) {
-    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-    document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
-
-    var targetPage = document.getElementById('page-' + pageName);
-    if (targetPage) targetPage.classList.add('active');
-
-    var targetTab = document.querySelector('.nav-tab[data-page="' + pageName + '"]');
-    if (targetTab) targetTab.classList.add('active');
-
-    if (pageName === 'vehicles') renderVehicles();
-    if (pageName === 'reports') { renderHistory(); setReportDefaults(); }
-}
-
-// ==================== 日期工具 ====================
-function pad2(n) { return n < 10 ? '0' + n : '' + n; }
-function formatDate(d) { return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
-function getTodayStr() { return formatDate(new Date()); }
-function getWeekNum(d) {
-    var date = new Date(d); date.setHours(0,0,0,0);
-    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-    var week1 = new Date(date.getFullYear(), 0, 4);
-    week1.setDate(week1.getDate() + 3 - (week1.getDay() + 6) % 7);
-    return 1 + Math.floor((date - week1) / 604800000);
-}
-function getWeekRange(year, weekNum) {
-    var d = new Date(year, 0, 4);
-    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-    var start = new Date(d.getTime() + (weekNum - 1) * 7 * 86400000 - 3 * 86400000);
-    var end = new Date(start.getTime() + 6 * 86400000);
-    return [formatDate(start), formatDate(end)];
-}
-function setReportDefaults() {
-    var now = new Date();
-    document.getElementById('reportYear').value = now.getFullYear();
-    document.getElementById('reportMonth').value = pad2(now.getMonth() + 1);
-    document.getElementById('reportWeekYear').value = now.getFullYear();
-    document.getElementById('reportWeekNum').value = getWeekNum(now);
-}
-
-function initReportSelectors() {
-    var now = new Date();
-    var currentYear = now.getFullYear();
-
-    var yearSel = document.getElementById('reportYear');
-    yearSel.innerHTML = '';
-    for (var y = currentYear - 2; y <= currentYear + 1; y++) {
-        var opt = document.createElement('option');
-        opt.value = y; opt.textContent = y + '年';
-        if (y === currentYear) opt.selected = true;
-        yearSel.appendChild(opt);
-    }
-
-    var monthSel = document.getElementById('reportMonth');
-    monthSel.innerHTML = '';
-    for (var m = 1; m <= 12; m++) {
-        var opt = document.createElement('option');
-        opt.value = pad2(m); opt.textContent = m + '月';
-        if (m === now.getMonth() + 1) opt.selected = true;
-        monthSel.appendChild(opt);
-    }
-
-    var weekYearSel = document.getElementById('reportWeekYear');
-    weekYearSel.innerHTML = '';
-    for (var y = currentYear - 2; y <= currentYear + 1; y++) {
-        var opt = document.createElement('option');
-        opt.value = y; opt.textContent = y + '年';
-        if (y === currentYear) opt.selected = true;
-        weekYearSel.appendChild(opt);
-    }
-
-    var weekNumSel = document.getElementById('reportWeekNum');
-    weekNumSel.innerHTML = '';
-    var currentWeek = getWeekNum(now);
-    for (var w = 1; w <= 53; w++) {
-        var opt = document.createElement('option');
-        opt.value = w; opt.textContent = '第' + w + '周';
-        if (w === currentWeek) opt.selected = true;
-        weekNumSel.appendChild(opt);
-    }
-}
-
-// ==================== 车辆管理 ====================
-function loadPlates() {
+function loadPlateSelect() {
     var sel = document.getElementById('inpPlate');
-    sel.innerHTML = '<option value="">请选择车牌...</option>';
-    vehicles.sort(function(a, b) { return a.plate.localeCompare(b.plate); });
-    vehicles.forEach(function(v) {
+    sel.innerHTML = '<option value="">请选择...</option>';
+    for (var i = 0; i < vehicles.length; i++) {
         var opt = document.createElement('option');
-        opt.value = v.plate; opt.textContent = v.plate;
+        opt.value = vehicles[i].plate;
+        opt.innerHTML = vehicles[i].plate;
         sel.appendChild(opt);
-    });
+    }
 }
 
-function renderVehicles() {
-    var list = document.getElementById('vehicleList');
-    if (vehicles.length === 0) { list.innerHTML = '<div class="empty">还没有车辆</div>'; return; }
-    vehicles.sort(function(a, b) { return a.plate.localeCompare(b.plate); });
-    list.innerHTML = vehicles.map(function(v) {
-        return '<div class="vehicle-item">' +
-            '<span class="vehicle-plate">🚗 ' + v.plate + '</span>' +
-            '<button class="btn btn-danger btn-sm" onclick="removeVehicle(' + v.id + ', '' + v.plate + '')">删除</button>' +
-            '</div>';
-    }).join('');
-}
-
-function addVehicle() {
-    var input = document.getElementById('newPlate');
-    var plate = input.value.trim().toUpperCase();
-    if (!plate) { showToast('请输入车牌'); return; }
-    if (vehicles.some(function(v) { return v.plate === plate; })) { showToast('车牌已存在'); return; }
-    var id = Date.now();
-    vehicles.push({id: id, plate: plate});
-    saveVehicles();
-    input.value = ''; showToast('添加成功');
-    renderVehicles(); loadPlates();
-}
-
-function removeVehicle(id, plate) {
-    if (!confirm('确定删除车牌 ' + plate + ' 吗？')) return;
-    vehicles = vehicles.filter(function(v) { return v.id !== id; });
-    saveVehicles();
-    showToast('已删除'); renderVehicles(); loadPlates();
-}
-
-// ==================== 记油费 ====================
 function addToday() {
     var plate = document.getElementById('inpPlate').value;
     var liters = parseFloat(document.getElementById('inpLiters').value);
     var price = parseFloat(document.getElementById('inpPrice').value);
 
-    if (!plate) { showToast('请选择车牌'); return; }
-    if (!liters || liters <= 0) { showToast('请输入加油量'); return; }
-    if (!price || price <= 0) { showToast('请输入油价'); return; }
+    if (!plate) { alert('请选择车牌'); return; }
+    if (!liters || liters <= 0) { alert('请输入加油量'); return; }
+    if (!price || price <= 0) { alert('请输入油价'); return; }
 
-    var amount = parseFloat((liters * price).toFixed(2));
+    var amount = Math.round(liters * price * 100) / 100;
     todayCars.push({plate: plate, liters: liters, amount: amount});
 
     document.getElementById('inpLiters').value = '';
     document.getElementById('inpPlate').value = '';
 
-    renderToday(); showToast('已添加');
+    showTodayList();
 }
 
-function renderToday() {
-    var card = document.getElementById('todayCard');
-    var list = document.getElementById('todayList');
-    if (todayCars.length === 0) { card.style.display = 'none'; return; }
+function showTodayList() {
+    var box = document.getElementById('todayList');
+    var totalBox = document.getElementById('todayTotalBox');
 
-    card.style.display = 'block';
+    if (todayCars.length === 0) {
+        box.innerHTML = '';
+        totalBox.style.display = 'none';
+        return;
+    }
+
+    totalBox.style.display = 'block';
+    var html = '';
+    var total = 0;
+    var totalLiters = 0;
     var price = document.getElementById('inpPrice').value || '0';
-    list.innerHTML = todayCars.map(function(c, i) {
-        return '<div class="today-item">' +
-            '<div class="today-item-info">' +
-            '<div class="today-item-plate">' + c.plate + '</div>' +
-            '<div class="today-item-detail">' + c.liters.toFixed(2) + '升 × ' + price + '元/升</div>' +
-            '</div>' +
-            '<div style="display:flex; align-items:center;">' +
-            '<div class="today-item-amount">' + c.amount.toFixed(2) + '元</div>' +
-            '<button class="today-item-del" onclick="removeToday(' + i + ')">删除</button>' +
-            '</div></div>';
-    }).join('');
 
-    var total = todayCars.reduce(function(s, c) { return s + c.amount; }, 0);
-    var totalLiters = todayCars.reduce(function(s, c) { return s + c.liters; }, 0);
-    document.getElementById('todayTotal').textContent = '¥' + total.toFixed(2);
-    document.getElementById('todayDetail').textContent = '共' + todayCars.length + '辆车，' + totalLiters.toFixed(2) + '升';
+    for (var i = 0; i < todayCars.length; i++) {
+        var c = todayCars[i];
+        total += c.amount;
+        totalLiters += c.liters;
+        html += '<div class="item-box">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<div>' +
+            '<div class="item-title">' + c.plate + '</div>' +
+            '<div class="item-info">' + c.liters.toFixed(2) + '升 x ' + price + '元/升</div>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;">' +
+            '<div class="item-right" style="margin-right:10px;">' + c.amount.toFixed(2) + '元</div>' +
+            '<button class="btn btn-red btn-sm" onclick="delToday(' + i + ')">删除</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    box.innerHTML = html;
+    document.getElementById('todayTotalMoney').innerHTML = total.toFixed(2) + '元';
+    document.getElementById('todayTotalInfo').innerHTML = '共' + todayCars.length + '辆车，' + totalLiters.toFixed(2) + '升';
 }
 
-function removeToday(idx) {
-    todayCars.splice(idx, 1);
-    renderToday();
+function delToday(idx) {
+    var newCars = [];
+    for (var i = 0; i < todayCars.length; i++) {
+        if (i !== idx) newCars.push(todayCars[i]);
+    }
+    todayCars = newCars;
+    showTodayList();
 }
 
 function saveToday() {
     var date = document.getElementById('inpDate').value;
     var price = parseFloat(document.getElementById('inpPrice').value);
-    if (!date) { showToast('请选择日期'); return; }
-    if (!price) { showToast('请输入油价'); return; }
-    if (todayCars.length === 0) { showToast('请至少添加一辆车'); return; }
+    if (!date) { alert('请选择日期'); return; }
+    if (!price) { alert('请输入油价'); return; }
+    if (todayCars.length === 0) { alert('请至少添加一辆车'); return; }
 
-    var totalAmount = todayCars.reduce(function(s, c) { return s + c.amount; }, 0);
-    var totalLiters = todayCars.reduce(function(s, c) { return s + c.liters; }, 0);
+    var totalAmount = 0;
+    var totalLiters = 0;
+    for (var i = 0; i < todayCars.length; i++) {
+        totalAmount += todayCars[i].amount;
+        totalLiters += todayCars[i].liters;
+    }
 
-    var existing = records.find(function(r) { return r.date === date; });
-    if (existing) {
+    var foundIdx = -1;
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].date === date) { foundIdx = i; break; }
+    }
+
+    if (foundIdx >= 0) {
         if (!confirm('该日期已有记录，是否覆盖？
-选"取消"则追加到原有记录')) {
-            existing.cars.push.apply(existing.cars, todayCars);
-            existing.totalAmount = existing.cars.reduce(function(s, c) { return s + c.amount; }, 0);
-            existing.totalLiters = existing.cars.reduce(function(s, c) { return s + c.liters; }, 0);
+点"取消"则追加到原有记录')) {
+            for (var i = 0; i < todayCars.length; i++) {
+                records[foundIdx].cars.push(todayCars[i]);
+            }
+            records[foundIdx].totalAmount = 0;
+            records[foundIdx].totalLiters = 0;
+            for (var i = 0; i < records[foundIdx].cars.length; i++) {
+                records[foundIdx].totalAmount += records[foundIdx].cars[i].amount;
+                records[foundIdx].totalLiters += records[foundIdx].cars[i].liters;
+            }
         } else {
-            existing.price = price;
-            existing.cars = todayCars;
-            existing.totalAmount = totalAmount;
-            existing.totalLiters = totalLiters;
+            records[foundIdx] = {
+                id: records[foundIdx].id, date: date, price: price,
+                cars: todayCars, totalAmount: totalAmount, totalLiters: totalLiters
+            };
         }
     } else {
+        var maxId = 0;
+        for (var i = 0; i < records.length; i++) {
+            if (records[i].id > maxId) maxId = records[i].id;
+        }
         records.push({
-            id: Date.now(), date: date, price: price,
+            id: maxId + 1, date: date, price: price,
             cars: todayCars, totalAmount: totalAmount, totalLiters: totalLiters
         });
     }
 
     saveRecords();
-    showToast('保存成功');
+    alert('保存成功');
     resetToday();
 }
 
@@ -567,210 +242,23 @@ function resetToday() {
     todayCars = [];
     document.getElementById('inpPrice').value = '';
     document.getElementById('inpLiters').value = '';
-    document.getElementById('inpPlate').value = '';
-    document.getElementById('todayCard').style.display = 'none';
+    document.getElementById('todayList').innerHTML = '';
+    document.getElementById('todayTotalBox').style.display = 'none';
 }
 
-// ==================== 历史记录 ====================
-function renderHistory() {
-    var container = document.getElementById('historyList');
-    records.sort(function(a, b) { return b.date.localeCompare(a.date); });
-    if (records.length === 0) { container.innerHTML = '<div class="empty">暂无记录</div>'; return; }
-    container.innerHTML = records.map(function(r) {
-        return '<div class="history-item" onclick="showDetail('' + r.date + '')">' +
-            '<div class="history-date">📅 ' + r.date + '</div>' +
-            '<div class="history-meta">' +
-            '<span>油价' + r.price + '元/升 · ' + r.cars.length + '辆车 · ' + r.totalLiters.toFixed(1) + '升</span>' +
-            '<span class="history-amount">¥' + r.totalAmount.toFixed(2) + '</span>' +
-            '</div></div>';
-    }).join('');
+function pad2(n) {
+    return n < 10 ? '0' + n : '' + n;
 }
 
-function showDetail(date) {
-    currentDetailDate = date;
-    var r = records.find(function(x) { return x.date === date; });
-    if (!r) return;
-    document.getElementById('detailTitle').textContent = r.date + ' 油费明细';
-    var html = '<div style="margin-bottom:12px;"><strong>油价：</strong>' + r.price + ' 元/升</div>';
-    html += '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
-    html += '<tr style="background:#f5f5f5;"><th style="border:1px solid #ddd; padding:6px;">车牌</th><th style="border:1px solid #ddd; padding:6px;">加油量</th><th style="border:1px solid #ddd; padding:6px;">金额</th></tr>';
-    r.cars.forEach(function(c) {
-        html += '<tr><td style="border:1px solid #ddd; padding:6px;">' + c.plate + '</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">' + c.liters.toFixed(2) + '升</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">' + c.amount.toFixed(2) + '元</td></tr>';
-    });
-    html += '<tr style="font-weight:700; background:#fff8e1;"><td style="border:1px solid #ddd; padding:6px;">合计</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">' + r.totalLiters.toFixed(2) + '升</td><td style="border:1px solid #ddd; padding:6px; text-align:right;">' + r.totalAmount.toFixed(2) + '元</td></tr>';
-    html += '</table>';
-    document.getElementById('detailBody').innerHTML = html;
-    document.getElementById('detailModal').classList.add('active');
+function init() {
+    var d = new Date();
+    var today = d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+    document.getElementById('inpDate').value = today;
+    loadData();
+    loadPlateSelect();
 }
 
-function closeModal() {
-    document.getElementById('detailModal').classList.remove('active');
-    currentDetailDate = null;
-}
-
-function deleteRecord() {
-    if (!currentDetailDate) return;
-    if (!confirm('确定删除这条记录？')) return;
-    records = records.filter(function(r) { return r.date !== currentDetailDate; });
-    saveRecords();
-    showToast('已删除'); closeModal(); renderHistory();
-}
-
-// ==================== 报表生成 ====================
-document.getElementById('reportType').addEventListener('change', function() {
-    document.getElementById('monthGroup').style.display = this.value === 'month' ? 'block' : 'none';
-    document.getElementById('weekGroup').style.display = this.value === 'week' ? 'block' : 'none';
-});
-
-function generateReport() {
-    var type = document.getElementById('reportType').value;
-    var startStr, endStr, title;
-
-    if (type === 'week') {
-        var year = parseInt(document.getElementById('reportWeekYear').value);
-        var weekNum = parseInt(document.getElementById('reportWeekNum').value);
-        var range = getWeekRange(year, weekNum);
-        startStr = range[0]; endStr = range[1];
-        title = year + '年 第' + weekNum + '周 油费周报表';
-    } else {
-        var year = document.getElementById('reportYear').value;
-        var month = document.getElementById('reportMonth').value;
-        startStr = year + '-' + month + '-01';
-        var lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-        endStr = year + '-' + month + '-' + pad2(lastDay);
-        title = year + '年' + parseInt(month) + '月 油费月报表';
-    }
-
-    var filtered = records.filter(function(r) { return r.date >= startStr && r.date <= endStr; });
-    filtered.sort(function(a, b) { return a.date.localeCompare(b.date); });
-
-    if (filtered.length === 0) {
-        showToast('该时段没有记录');
-        document.getElementById('reportPreview').classList.remove('active');
-        document.getElementById('reportActions').style.display = 'none';
-        return;
-    }
-
-    var html = '<div class="report-title">⛽ 油费' + (type === 'week' ? '周' : '月') + '报表</div>';
-    html += '<div class="report-subtitle">统计期间：' + startStr + ' 至 ' + endStr + ' &nbsp;|&nbsp; 共 ' + filtered.length + ' 天有记录</div>';
-
-    html += '<div style="font-size:16px; font-weight:700; margin-bottom:10px;">📋 每日明细</div>';
-    filtered.forEach(function(r) {
-        html += '<table class="report-table">';
-        html += '<tr><th colspan="4" style="text-align:left; font-size:15px;">📅 ' + r.date + ' &nbsp;&nbsp; 油价：' + r.price + ' 元/升</th></tr>';
-        html += '<tr><th style="width:30%;">车牌</th><th style="width:25%;">加油量（升）</th><th style="width:25%;">单价（元）</th><th style="width:20%;">金额（元）</th></tr>';
-        r.cars.forEach(function(c) {
-            html += '<tr><td class="text-left">' + c.plate + '</td><td>' + c.liters.toFixed(2) + '</td><td>' + r.price + '</td><td class="text-right">' + c.amount.toFixed(2) + '</td></tr>';
-        });
-        html += '<tr><td colspan="4" class="report-day-total">当日合计：' + r.totalLiters.toFixed(2) + ' 升 &nbsp;&nbsp; ¥' + r.totalAmount.toFixed(2) + ' 元</td></tr>';
-        html += '</table>';
-    });
-
-    var carSummary = {};
-    var totalAmount = 0, totalLiters = 0;
-    filtered.forEach(function(r) {
-        r.cars.forEach(function(c) {
-            if (!carSummary[c.plate]) carSummary[c.plate] = {liters: 0, amount: 0, times: 0};
-            carSummary[c.plate].liters += c.liters;
-            carSummary[c.plate].amount += c.amount;
-            carSummary[c.plate].times += 1;
-        });
-        totalAmount += r.totalAmount;
-        totalLiters += r.totalLiters;
-    });
-
-    html += '<div class="report-summary-title">📊 车辆汇总</div>';
-    html += '<table class="report-table">';
-    html += '<tr><th>车牌</th><th>加油次数</th><th>总加油量（升）</th><th>总金额（元）</th></tr>';
-    Object.entries(carSummary).sort(function(a, b) { return b[1].amount - a[1].amount; }).forEach(function(entry) {
-        var plate = entry[0], d = entry[1];
-        html += '<tr><td class="text-left">' + plate + '</td><td>' + d.times + '</td><td>' + d.liters.toFixed(2) + '</td><td class="text-right">' + d.amount.toFixed(2) + '</td></tr>';
-    });
-    html += '<tr style="font-weight:700; background:#fff8e1;"><td class="text-left">合计</td><td>-</td><td>' + totalLiters.toFixed(2) + '</td><td class="text-right">' + totalAmount.toFixed(2) + '</td></tr>';
-    html += '</table>';
-    html += '<div style="margin-top:24px; text-align:right; font-size:13px; color:#666;">制表时间：' + new Date().toLocaleString('zh-CN') + '</div>';
-
-    document.getElementById('reportContent').innerHTML = html;
-    document.getElementById('reportPreview').classList.add('active');
-    document.getElementById('reportActions').style.display = 'block';
-    showToast('报表生成成功');
-}
-
-// ==================== PDF导出 ====================
-function downloadPDF() {
-    if (!window.jspdf || !window.html2canvas) {
-        showToast('PDF库加载失败，请使用打印功能');
-        return;
-    }
-    var preview = document.getElementById('reportPreview');
-    showToast('正在生成PDF，请稍候...');
-
-    html2canvas(preview, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
-        var imgData = canvas.toDataURL('image/png');
-        var pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-        var pageWidth = pdf.internal.pageSize.getWidth();
-        var pageHeight = pdf.internal.pageSize.getHeight();
-        var margin = 10;
-        var imgWidth = pageWidth - margin * 2;
-        var imgHeight = canvas.height * imgWidth / canvas.width;
-
-        var heightLeft = imgHeight;
-        var position = 0;
-        var pageCount = 0;
-
-        while (heightLeft > 0) {
-            if (pageCount > 0) pdf.addPage();
-            pdf.addImage(imgData, 'PNG', margin, position + margin, imgWidth, imgHeight);
-            heightLeft -= (pageHeight - margin * 2);
-            position -= (pageHeight - margin * 2);
-            pageCount++;
-        }
-
-        var type = document.getElementById('reportType').value;
-        var dateStr = type === 'week' ? 
-            document.getElementById('reportWeekYear').value + '-W' + document.getElementById('reportWeekNum').value :
-            document.getElementById('reportYear').value + '-' + document.getElementById('reportMonth').value;
-        pdf.save('油费' + (type === 'week' ? '周' : '月') + '报表_' + dateStr + '.pdf');
-        showToast('PDF已下载');
-    }).catch(function(e) {
-        console.error(e);
-        showToast('PDF生成失败，请使用打印功能');
-    });
-}
-
-// ==================== 事件绑定 ====================
-document.getElementById('navTabs').addEventListener('click', function(e) {
-    var btn = e.target.closest('.nav-tab');
-    if (!btn) return;
-    var page = btn.getAttribute('data-page');
-    if (page) switchTab(page);
-});
-
-document.getElementById('btnAddToday').addEventListener('click', addToday);
-document.getElementById('btnSaveToday').addEventListener('click', saveToday);
-document.getElementById('btnResetToday').addEventListener('click', resetToday);
-document.getElementById('btnAddVehicle').addEventListener('click', addVehicle);
-document.getElementById('btnGenReport').addEventListener('click', generateReport);
-document.getElementById('btnDownloadPDF').addEventListener('click', downloadPDF);
-document.getElementById('btnPrint').addEventListener('click', function() { window.print(); });
-document.getElementById('btnCloseModal').addEventListener('click', closeModal);
-document.getElementById('btnDeleteRecord').addEventListener('click', deleteRecord);
-document.getElementById('detailModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-});
-document.getElementById('inpLiters').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addToday();
-});
-document.getElementById('newPlate').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addVehicle();
-});
-
-// ==================== 启动 ====================
-document.getElementById('inpDate').valueAsDate = new Date();
-initStorage();
-initReportSelectors();
-loadPlates();
-setStatus('系统就绪', 'ok');
+init();
 </script>
 </body>
 </html>
