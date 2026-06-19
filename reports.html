@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>报表导出 - 油费管理系统</title>
+<style>
+* { margin:0; padding:0; }
+body { font-family: Arial, "Microsoft YaHei", sans-serif; background: #f0f2f5; font-size: 16px; margin: 0; padding: 0 12px 60px 12px; }
+h1 { text-align: center; font-size: 22px; color: #d84315; margin: 10px 0; }
+
+.nav { display: flex; gap: 6px; margin-bottom: 12px; background: #fff; padding: 5px; border-radius: 10px; }
+.nav a { flex: 1; padding: 10px 2px; font-size: 14px; font-weight: bold; border-radius: 8px; background: #eee; color: #666; text-align: center; text-decoration: none; display: block; }
+.nav a.active { background: #ff9800; color: #fff; }
+
+.card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.card-title { font-size: 15px; font-weight: bold; color: #444; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #f5f5f5; }
+
+label { display: block; font-size: 14px; font-weight: bold; color: #555; margin: 10px 0 4px 0; }
+select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; }
+
+.btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; color: #fff; background: #ff9800; display: block; text-align: center; }
+.btn-blue { background: #42a5f5; }
+.btn-gray { background: #78909c; }
+
+.history-row { background: #fff; border-radius: 10px; padding: 12px; margin: 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.history-date { font-weight: bold; font-size: 15px; }
+.history-info { font-size: 13px; color: #666; margin-top: 4px; }
+.history-money { font-weight: bold; color: #e65100; }
+
+.report-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+.report-table th, .report-table td { border: 1px solid #333; padding: 6px; text-align: center; }
+.report-table th { background: #f0f0f0; font-weight: bold; }
+.report-day-total { text-align: right; font-weight: bold; padding: 6px; border: 1px solid #333; border-top: 2px solid #333; background: #fff8e1; }
+.report-summary-title { font-size: 16px; font-weight: bold; margin: 24px 0 12px; border-bottom: 2px solid #000; padding-bottom: 6px; }
+
+.empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
+
+@media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+    .nav, .card { display: none !important; }
+}
+</style>
+</head>
+<body>
+<h1>油费管理系统</h1>
+
+<div class="nav">
+    <a href="index.html">记油费</a>
+    <a href="vehicles.html">车辆管理</a>
+    <a href="reports.html" class="active">报表导出</a>
+</div>
+
+<div class="card">
+    <div class="card-title">选择报表</div>
+    <label>报表类型</label>
+    <select id="reportType" onchange="changeReportType()">
+        <option value="month">月报表</option>
+        <option value="week">周报表</option>
+    </select>
+
+    <div id="monthSelect">
+        <label>年份</label>
+        <select id="rYear"></select>
+        <label>月份</label>
+        <select id="rMonth"></select>
+    </div>
+
+    <div id="weekSelect" style="display:none;">
+        <label>年份</label>
+        <select id="rWeekYear"></select>
+        <label>周数</label>
+        <select id="rWeekNum"></select>
+    </div>
+
+    <button class="btn btn-blue" onclick="makeReport()">生成报表预览</button>
+</div>
+
+<div id="printArea" style="display:none; margin-top:12px;">
+    <div id="reportHtml"></div>
+</div>
+
+<div id="printBtnBox" style="display:none; margin-top:10px;">
+    <button class="btn btn-gray" onclick="window.print()">打印 / 另存为PDF</button>
+</div>
+
+<div class="card">
+    <div class="card-title">历史记录</div>
+    <div id="historyList"></div>
+</div>
+
+<script>
+var records = [];
+
+function loadData() {
+    try {
+        var r = localStorage.getItem('fuel_records');
+        if (r) records = JSON.parse(r);
+    } catch(e) {}
+}
+
+function pad2(n) {
+    return n < 10 ? '0' + n : '' + n;
+}
+
+function formatDate(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+}
+
+function getWeekNum(d) {
+    var date = new Date(d);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    var week1 = new Date(date.getFullYear(), 0, 4);
+    week1.setDate(week1.getDate() + 3 - (week1.getDay() + 6) % 7);
+    return 1 + Math.floor((date - week1) / 604800000);
+}
+
+function getWeekRange(year, weekNum) {
+    var d = new Date(year, 0, 4);
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    var start = new Date(d.getTime() + (weekNum - 1) * 7 * 86400000 - 3 * 86400000);
+    var end = new Date(start.getTime() + 6 * 86400000);
+    return [formatDate(start), formatDate(end)];
+}
+
+function initSelectors() {
+    var now = new Date();
+    var y = now.getFullYear();
+
+    var yearSel = document.getElementById('rYear');
+    yearSel.innerHTML = '';
+    for (var i = y - 2; i <= y + 1; i++) {
+        var opt = document.createElement('option');
+        opt.value = i; opt.innerHTML = i + '年';
+        if (i === y) opt.selected = true;
+        yearSel.appendChild(opt);
+    }
+
+    var monthSel = document.getElementById('rMonth');
+    monthSel.innerHTML = '';
+    for (var i = 1; i <= 12; i++) {
+        var opt = document.createElement('option');
+        opt.value = pad2(i); opt.innerHTML = i + '月';
+        if (i === now.getMonth() + 1) opt.selected = true;
+        monthSel.appendChild(opt);
+    }
+
+    var weekYearSel = document.getElementById('rWeekYear');
+    weekYearSel.innerHTML = '';
+    for (var i = y - 2; i <= y + 1; i++) {
+        var opt = document.createElement('option');
+        opt.value = i; opt.innerHTML = i + '年';
+        if (i === y) opt.selected = true;
+        weekYearSel.appendChild(opt);
+    }
+
+    var weekNumSel = document.getElementById('rWeekNum');
+    weekNumSel.innerHTML = '';
+    var cw = getWeekNum(now);
+    for (var i = 1; i <= 53; i++) {
+        var opt = document.createElement('option');
+        opt.value = i; opt.innerHTML = '第' + i + '周';
+        if (i === cw) opt.selected = true;
+        weekNumSel.appendChild(opt);
+    }
+}
+
+function changeReportType() {
+    var type = document.getElementById('reportType').value;
+    document.getElementById('monthSelect').style.display = type === 'month' ? 'block' : 'none';
+    document.getElementById('weekSelect').style.display = type === 'week' ? 'block' : 'none';
+}
+
+function makeReport() {
+    var type = document.getElementById('reportType').value;
+    var startStr, endStr;
+
+    if (type === 'week') {
+        var year = parseInt(document.getElementById('rWeekYear').value);
+        var weekNum = parseInt(document.getElementById('rWeekNum').value);
+        var range = getWeekRange(year, weekNum);
+        startStr = range[0]; endStr = range[1];
+    } else {
+        var year = document.getElementById('rYear').value;
+        var month = document.getElementById('rMonth').value;
+        startStr = year + '-' + month + '-01';
+        var lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+        endStr = year + '-' + month + '-' + pad2(lastDay);
+    }
+
+    var filtered = [];
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].date >= startStr && records[i].date <= endStr) {
+            filtered.push(records[i]);
+        }
+    }
+
+    if (filtered.length === 0) {
+        alert('该时段没有记录');
+        document.getElementById('printArea').style.display = 'none';
+        document.getElementById('printBtnBox').style.display = 'none';
+        return;
+    }
+
+    filtered.sort(function(a, b) {
+        return a.date > b.date ? 1 : -1;
+    });
+
+    var html = '<div style="text-align:center;font-size:20px;font-weight:bold;margin-bottom:16px;">油费' + (type === 'week' ? '周' : '月') + '报表</div>';
+    html += '<div style="text-align:center;font-size:13px;margin-bottom:20px;">统计期间：' + startStr + ' 至 ' + endStr + ' &nbsp;|&nbsp; 共 ' + filtered.length + ' 天有记录</div>';
+
+    html += '<div style="font-size:15px;font-weight:bold;margin-bottom:8px;">每日明细</div>';
+    for (var i = 0; i < filtered.length; i++) {
+        var r = filtered[i];
+        html += '<table class="report-table">';
+        html += '<tr><th colspan="4" style="text-align:left;font-size:14px;">' + r.date + ' &nbsp;&nbsp; 油价：' + r.price + ' 元/升</th></tr>';
+        html += '<tr><th style="width:30%;">车牌</th><th style="width:25%;">加油量（升）</th><th style="width:25%;">单价（元）</th><th style="width:20%;">金额（元）</th></tr>';
+        for (var j = 0; j < r.cars.length; j++) {
+            var c = r.cars[j];
+            html += '<tr><td style="text-align:left;">' + c.plate + '</td><td>' + c.liters.toFixed(2) + '</td><td>' + r.price + '</td><td style="text-align:right;">' + c.amount.toFixed(2) + '</td></tr>';
+        }
+        html += '<tr><td colspan="4" class="report-day-total">当日合计：' + r.totalLiters.toFixed(2) + ' 升 &nbsp;&nbsp; ' + r.totalAmount.toFixed(2) + ' 元</td></tr>';
+        html += '</table>';
+    }
+
+    var carSummary = {};
+    var totalAmount = 0, totalLiters = 0;
+    for (var i = 0; i < filtered.length; i++) {
+        var r = filtered[i];
+        for (var j = 0; j < r.cars.length; j++) {
+            var c = r.cars[j];
+            if (!carSummary[c.plate]) carSummary[c.plate] = {liters: 0, amount: 0, times: 0};
+            carSummary[c.plate].liters += c.liters;
+            carSummary[c.plate].amount += c.amount;
+            carSummary[c.plate].times += 1;
+        }
+        totalAmount += r.totalAmount;
+        totalLiters += r.totalLiters;
+    }
+
+    html += '<div class="report-summary-title">车辆汇总</div>';
+    html += '<table class="report-table">';
+    html += '<tr><th>车牌</th><th>加油次数</th><th>总加油量（升）</th><th>总金额（元）</th></tr>';
+
+    var plates = [];
+    for (var p in carSummary) {
+        if (carSummary.hasOwnProperty(p)) plates.push(p);
+    }
+    plates.sort(function(a, b) {
+        return carSummary[b].amount - carSummary[a].amount;
+    });
+
+    for (var i = 0; i < plates.length; i++) {
+        var plate = plates[i];
+        var d = carSummary[plate];
+        html += '<tr><td style="text-align:left;">' + plate + '</td><td>' + d.times + '</td><td>' + d.liters.toFixed(2) + '</td><td style="text-align:right;">' + d.amount.toFixed(2) + '</td></tr>';
+    }
+    html += '<tr style="font-weight:bold;background:#fff8e1;"><td style="text-align:left;">合计</td><td>-</td><td>' + totalLiters.toFixed(2) + '</td><td style="text-align:right;">' + totalAmount.toFixed(2) + '</td></tr>';
+    html += '</table>';
+    html += '<div style="margin-top:20px;text-align:right;font-size:12px;color:#666;">制表时间：' + new Date().toLocaleString('zh-CN') + '</div>';
+
+    document.getElementById('reportHtml').innerHTML = html;
+    document.getElementById('printArea').style.display = 'block';
+    document.getElementById('printBtnBox').style.display = 'block';
+    alert('报表生成成功');
+}
+
+function showHistory() {
+    var box = document.getElementById('historyList');
+    if (records.length === 0) {
+        box.innerHTML = '<div class="empty">暂无记录</div>';
+        return;
+    }
+    var html = '';
+    for (var i = records.length - 1; i >= 0; i--) {
+        var r = records[i];
+        html += '<div class="history-row">' +
+            '<div class="history-date">' + r.date + '</div>' +
+            '<div class="history-info">' +
+            '油价' + r.price + '元/升 · ' + r.cars.length + '辆车 · ' + r.totalLiters.toFixed(1) + '升' +
+            '<span style="float:right;" class="history-money">' + r.totalAmount.toFixed(2) + '元</span>' +
+            '</div></div>';
+    }
+    box.innerHTML = html;
+}
+
+function init() {
+    loadData();
+    initSelectors();
+    showHistory();
+}
+
+init();
+</script>
+</body>
+</html>
